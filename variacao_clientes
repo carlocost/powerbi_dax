@@ -1,0 +1,63 @@
+Variação Clientes = 
+VAR _Fim = EOMONTH(MAX('dCalendário'[Date]), 0) -- Definindo Final do Mês
+VAR _Dia = MAX('dCalendário'[Date]) -- Definindo última data para saber se o mês está completo
+
+-- Range de data (se o mês estiver incompleto) ________________________
+
+-- MoM ______________________
+VAR _Max_MoM = EDATE(
+    CALCULATE(
+        LASTDATE('dCalendário'[Date]), 
+        ALLCROSSFILTERED('dCalendário')), 
+    -1
+)
+
+VAR _Min_MoM = EDATE(
+    CALCULATE(
+        LASTDATE('dCalendário'[Date]), 
+        ALLCROSSFILTERED('dCalendário')
+    )-
+    DAY(
+        CALCULATE(
+            LASTDATE('dCalendário'[Date]), ALLCROSSFILTERED('dCalendário')))+1, 
+    -1
+)
+
+-- YoY ________________________
+VAR _Max_YoY = EDATE(
+    CALCULATE(
+        LASTDATE('dCalendário'[Date]), 
+        ALLCROSSFILTERED('dCalendário')), 
+    -12
+)
+
+
+VAR _Min_YoY = EDATE(
+    CALCULATE(
+        LASTDATE('dCalendário'[Date]), 
+        ALLCROSSFILTERED('dCalendário')
+    )-
+    DAY(
+        CALCULATE(
+            LASTDATE('dCalendário'[Date]), ALLCROSSFILTERED('dCalendário')))+1, 
+    -12
+)
+
+
+/* Cálculo periodo anterior com condicional de mês incompleto*/
+VAR _MoM = IF(_Fim = _Dia, 
+    CALCULATE([Clientes], DATEADD('dCalendário'[Date], -1, MONTH)), 
+    CALCULATE([Clientes], AND('dCalendário'[Date] >= _Min_MoM, 'dCalendário'[Date] <= _Max_MoM))
+)
+
+VAR _YoY = IF(_Fim = _Dia, 
+    CALCULATE([Clientes], DATEADD('dCalendário'[Date], -1, YEAR)), 
+    CALCULATE([Clientes], AND('dCalendário'[Date] >= _Min_YoY, 'dCalendário'[Date] <= _Max_YoY))
+)
+
+RETURN
+SWITCH(
+    SELECTEDVALUE('Filtro_Variação'[Variação]),
+    "MoM%", DIVIDE([Clientes]-_MoM, _MoM, 0),
+    "YoY%", DIVIDE([Clientes]-_YoY, _YoY, 0)
+)
