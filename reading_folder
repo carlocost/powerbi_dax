@@ -1,0 +1,23 @@
+let
+    // Step 1: Get all files from the folder
+    Source = Folder.Files(folderPath),
+
+    // Step 2: Filter only .xlsx files
+    FilteredXlsxFiles = Table.SelectRows(Source, each ([Extension] = ".xlsx")),
+
+    // Step 3: Extract all sheet/table/defined name metadata from each Excel file
+    ExtractedExcelContent = Table.AddColumn(FilteredXlsxFiles, "ExcelContent", each Excel.Workbook([Content])),
+
+    // Step 4: Expand metadata table to access name, type, and data
+    ExpandedExcelContent = Table.ExpandTableColumn(ExtractedExcelContent, "ExcelContent", {"Data", "Item", "Kind"}, {"Data", "Item", "Kind"}),
+
+    // Step 5: Filter only the "BaseSAP" worksheet from "Base_Dados.xlsx"
+    FilteredWorksheet = Table.SelectRows(ExpandedExcelContent, each ([Kind] = "Sheet") and ([Name] = "Base_Dados.xlsx") and ([Item] = "BaseSAP")),
+
+    // Step 6: Keep only the actual table data
+    RemovedOtherColumns = Table.SelectColumns(FilteredWorksheet, {"Data"}),
+
+    // Step 7: Expand the content of the worksheet
+    ExpandedData = Table.ExpandTableColumn(RemovedOtherColumns, "Data", {"Column1", "Column2", "Column3", "Column4", "Column5"}, {"Column1", "Column2", "Column3", "Column4", "Column5"})
+in
+    ExpandedData
